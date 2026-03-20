@@ -169,3 +169,8 @@ class Device(ABC):
     def get_short_description(self) -> str:
         """Возвращает краткое описание устройства."""
         pass
+
+    def __str__(self) -> str:
+        """Возвращает строковый формат объекта."""
+        return (f'Info Device:\nModel: {self.model}\nCategory: '
+                f'{self.category}\nYear: {self.year}\nImage: {self.image}')
