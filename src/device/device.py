@@ -16,15 +16,21 @@ class Device(ABC):
     ]
 
     def __init__(self, brand: str, model: str, category: CategoryType,
-                 year: int=None, image: str=None, specs: dict=None, review: Review = None):
+                 year: int = None, image: str = None, specs: dict = None, review: Review = None):
         """
         Инициализирует экземпляр устройства.
         :param brand:       Брэнд устройства.
         :param model:       Модель устройства.
         :param category:    Категория устройства.
         :param year:        Год выпуска устройства.
+                            Если year is None, будет автоматически установлен
+                            текущий год.
         :param image:       Картинка устройства.
+                            Если image is None, будет автоматически установлена
+                            картинка по умолчанию.
         :param specs:       Характеристики устройства.
+                            Если specs is None, будет автоматически создан
+                            пустой словарь.
         :param review:      Актуальный обзор на устройство.
         """
         self.brand = brand
@@ -90,7 +96,7 @@ class Device(ABC):
         :return: None.
         """
         if new_image is None:
-            self._image = "/" # ПОКА ЗАГЛУШКА, В БУДУЩЕМ ИСПРАВИТЬ
+            self._image = "/" # TODO: ПОКА ЗАГЛУШКА, В БУДУЩЕМ ИСПРАВИТЬ
         elif not isinstance(new_image, str):
             print('"new_image" must be str')
         else:
