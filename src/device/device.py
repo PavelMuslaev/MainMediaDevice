@@ -174,3 +174,8 @@ class Device(ABC):
         """Возвращает строковый формат объекта."""
         return (f'Info Device:\nModel: {self.model}\nCategory: '
                 f'{self.category}\nYear: {self.year}\nImage: {self.image}')
+
+    def __repr__(self) -> str:
+        """Возвращает строковый отчёт об объекте."""
+        return (f'Device(brand={self.brand}, model={self.model}, category={self.category}, '
+                f'year={self.year}, image={self.image}, specs={self.specs}, review={self.review})')
