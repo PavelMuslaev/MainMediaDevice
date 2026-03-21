@@ -183,20 +183,10 @@ class Device(ABC):
     @classmethod
     def from_dict(cls, data: dict) -> Device | None:
         base_keys = ['brand', 'model', 'category']
-        all_keys = ['brand', 'model', 'category', 'year', 'image', 'specs', 'review']
-        data = copy.deepcopy(data)
-        new_device = {}
 
         for key in base_keys:
             if key not in data:
                 print(f'ПРОПУЩЕН БАЗОВЫЙ КЛЮЧ: {key}! 🚨')  # TODO: ЗАМЕНИТЬ НА ИСКЛЮЧЕНИЕ
                 return None
 
-        for key in all_keys:
-            if key == 'review' and key in data:
-                if isinstance(data[key], dict):
-                    new_device[key] = Review(**data[key])
-            else:
-                new_device[key] = data.get(key, None)
-
-        return cls(**new_device)
+        return cls(**data)
