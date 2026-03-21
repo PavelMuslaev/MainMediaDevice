@@ -10,9 +10,9 @@ from src.review.review import Review
 class Device(ABC):
     """Супер класс модель любого устройства приложения."""
 
-    CategoryType = Literal["Смартфоны", "Наушники", "Планшеты", "Умные часы",]
+    CategoryType = Literal["Смартфон", "Наушники", "Планшет", "Умные часы", "Ноутбук"]
     ALLOWED_CATEGORIES = [
-        "Смартфоны", "Наушники", "Планшеты", "Умные часы",
+        "Смартфон", "Наушники", "Планшет", "Умные часы", "Ноутбук"
     ]
 
     def __init__(self, brand: str, model: str, category: CategoryType,
