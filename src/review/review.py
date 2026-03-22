@@ -197,3 +197,27 @@ class Review:
             self.__cons.pop(index)
         else:
             print('Индекс находится за пределами массива')
+
+    @classmethod
+    def from_dict(cls, data: dict) -> Review | None:
+        """
+        Преобразует словарь данных в экземпляр класса Device.
+        :param data: Словарь с обязательными ключами: title, content
+                    и опциональными: author, date, pros, cons.
+        :return: экземпляр класса Review.
+        """
+        base_keys = ['title', 'content']
+
+        for key in base_keys:
+            if key not in data:
+                print(f'ПРОПУЩЕН БАЗОВЫЙ КЛЮЧ: {key}! 🚨')  # TODO: ЗАМЕНИТЬ НА ИСКЛЮЧЕНИЕ
+                return None
+
+        return cls(
+            title=data['title'],
+            content=data['content'],
+            author=data.get('author', 'Эксперт'),
+            date=data.get('date', None),
+            pros=data.get('pros', None),
+            cons=data.get('cons', None),
+        )
