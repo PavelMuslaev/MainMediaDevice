@@ -5,7 +5,7 @@ class Review:
     """Модель Review для работы с отзывами."""
 
     def __init__(self, title: str, content: str, author='Эксперт', date=None,
-                 pros=None, cons=None):
+                 status: str = "published", pros=None, cons=None):
         """
         Инициализирует объект отзыва.
 
@@ -29,6 +29,7 @@ class Review:
         self.title = title
         self.content = content
         self.author = author
+        self.status = status
         self.date = date                # if date is not None else datetime.today()
         self.pros = pros                # pros.copy() if pros is not None else []
         self.cons = cons                # (cons or []).copy()
@@ -83,6 +84,23 @@ class Review:
             self.__author = value
         else:
             print('Автор может быть только строкой')
+
+    @property
+    def status(self) -> str:
+        """Возвращает статус обзора."""
+        return self.__status
+
+    @status.setter
+    def status(self, value: str) -> None:
+        """
+        Устанавливает статус обзора.
+        :param value: Состояние обзора.
+        :return: None.
+        """
+        if not isinstance(value, str):
+            print(f'{value} must be str')
+        else:
+            self.__status = value
 
     @property
     def date(self) -> datetime:
