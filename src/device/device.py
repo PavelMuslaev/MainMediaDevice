@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Literal, Any
+from typing import Literal, Any, Optional
 
 import copy
 
@@ -10,13 +10,14 @@ from src.review.review import Review
 class Device(ABC):
     """Супер класс модель любого устройства приложения."""
 
-    CategoryType = Literal["Смартфоны", "Наушники", "Планшеты", "Умные часы",]
+    CategoryType = Literal["Смартфон", "Наушники", "Планшет", "Умные часы", "Ноутбук"]
     ALLOWED_CATEGORIES = [
-        "Смартфоны", "Наушники", "Планшеты", "Умные часы",
+        "Смартфон", "Наушники", "Планшет", "Умные часы", "Ноутбук"
     ]
 
     def __init__(self, brand: str, model: str, category: CategoryType,
-                 year: int = None, image: str = None, specs: dict = None, review: Review = None):
+                 year: Optional[int]=None, image: Optional[str]=None,
+                 specs: Optional[dict]=None, review: Optional[Review]=None):
         """
         Инициализирует экземпляр устройства.
         :param brand:       Брэнд устройства.
@@ -139,7 +140,7 @@ class Device(ABC):
         else:
             self._review = new_review
 
-    def add_spec(self, key: str, value: Any):
+    def add_spec(self, key: str, value: Any) -> None:
         """
         Добавляет или обновляет характеристику в словаре _specs по
         ключу key со значением value.
@@ -149,7 +150,7 @@ class Device(ABC):
         """
         self._specs[key] = value
 
-    def remove_spec(self, key: str):
+    def remove_spec(self, key: str) -> None:
         """
         Удаляет характеристику по ключу key.
         :param key: Ключ по которому будет произведен поиск.
@@ -177,5 +178,28 @@ class Device(ABC):
 
     def __repr__(self) -> str:
         """Возвращает строковый отчёт об объекте."""
-        return (f'Device(brand={self.brand}, model={self.model}, category={self.category}, '
-                f'year={self.year}, image={self.image}, specs={self.specs}, review={self.review})')
+        return (f'Device(brand={self.brand!r}, model={self.model!r}, category={self.category!r}, '
+                f'year={self.year}, image={self.image!r}, specs={self.specs}, review={self.review})')
+
+    @classmethod
+    def from_dict(cls, data: dict) -> Device | None:
+        base_keys = ['brand', 'model', 'category']
+
+        for key in base_keys:
+            if key not in data:
+                print(f'ПРОПУЩЕН БАЗОВЫЙ КЛЮЧ: {key}! 🚨')  # TODO: ЗАМЕНИТЬ НА ИСКЛЮЧЕНИЕ
+                return None
+
+        review = None
+        if 'review' in data:
+            review = Review.from_dict(data['review'])
+
+        return cls(
+            brand=data['brand'],
+            model=data['model'],
+            category=data['category'],
+            year=data.get('year', None),
+            image=data.get('image', None),
+            specs=data.get('specs', None),
+            review=review,
+        )
