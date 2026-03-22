@@ -183,6 +183,12 @@ class Device(ABC):
 
     @classmethod
     def from_dict(cls, data: dict) -> Device | None:
+        """
+        Преобразует словарь данных в экземпляр класса Device.
+        :param data: Словарь с обязательными ключами: brand, model, category,
+                    и опциональными: year, image, specs, review.
+        :return: экземпляр класса Device.
+        """
         base_keys = ['brand', 'model', 'category']
 
         for key in base_keys:
