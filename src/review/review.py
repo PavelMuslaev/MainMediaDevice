@@ -5,7 +5,7 @@ class Review:
     """Модель Review для работы с отзывами."""
 
     def __init__(self, title: str, content: str, author='Эксперт', date=None,
-                 pros=None, cons=None):
+                 status: str = "published", pros=None, cons=None):
         """
         Инициализирует объект отзыва.
 
@@ -29,6 +29,7 @@ class Review:
         self.title = title
         self.content = content
         self.author = author
+        self.status = status
         self.date = date                # if date is not None else datetime.today()
         self.pros = pros                # pros.copy() if pros is not None else []
         self.cons = cons                # (cons or []).copy()
@@ -83,6 +84,23 @@ class Review:
             self.__author = value
         else:
             print('Автор может быть только строкой')
+
+    @property
+    def status(self) -> str:
+        """Возвращает статус обзора."""
+        return self.__status
+
+    @status.setter
+    def status(self, value: str) -> None:
+        """
+        Устанавливает статус обзора.
+        :param value: Состояние обзора.
+        :return: None.
+        """
+        if not isinstance(value, str):
+            print(f'{value} must be str')
+        else:
+            self.__status = value
 
     @property
     def date(self) -> datetime:
@@ -197,3 +215,27 @@ class Review:
             self.__cons.pop(index)
         else:
             print('Индекс находится за пределами массива')
+
+    @classmethod
+    def from_dict(cls, data: dict) -> Review | None:
+        """
+        Преобразует словарь данных в экземпляр класса Device.
+        :param data: Словарь с обязательными ключами: title, content
+                    и опциональными: author, date, pros, cons.
+        :return: экземпляр класса Review.
+        """
+        base_keys = ['title', 'content']
+
+        for key in base_keys:
+            if key not in data:
+                print(f'ПРОПУЩЕН БАЗОВЫЙ КЛЮЧ: {key}! 🚨')  # TODO: ЗАМЕНИТЬ НА ИСКЛЮЧЕНИЕ
+                return None
+
+        return cls(
+            title=data['title'],
+            content=data['content'],
+            author=data.get('author', 'Эксперт'),
+            date=data.get('date', None),
+            pros=data.get('pros', None),
+            cons=data.get('cons', None),
+        )
