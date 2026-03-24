@@ -1,24 +1,105 @@
+"""
+Модуль для работы с отзывами (Review).
+Содержит класс Review и доменные исключения.
+"""
+
 from datetime import datetime
+from enum import StrEnum
+from typing import Optional, TypedDict, Required, Union
+
+
+class ReviewStatus(StrEnum):
+    DRAFT = "draft"
+    PUBLISHED = "published"
+    ARCHIVED = "archived"
+
+
+class ReviewData(TypedDict, total=False):
+    title: Required[str]
+    content: Required[str]
+    author: str
+    date: Optional[datetime]
+    status: Union[ReviewStatus, str]
+    pros: Optional[list[str]]
+    cons: Optional[list[str]]
+
+
+class ReviewError(Exception):
+    """Базовое исключение для всех ошибок, связанных с отзывами."""
+    pass
+
+
+class EmptyReviewFieldError(ReviewError):
+    """
+    Исключение, возникающие при попытке установить пустое значение в обязательное поле.
+
+    :param field_name: Имя поля, которое не может быть пустым.
+    """
+    def __init__(self, field_name: str):
+        self.field_name = field_name
+        super().__init__(f"Поле '{field_name}' не может быть пустым.")
+
+class ReviewTextTooLongError(ReviewError):
+    """
+    Исключение для текстов, превышающих допустимую длину.
+    Применяется преимуществам и недостаткам (pros/cons).
+
+    :param field_type: Тип поля ('pro' or 'cons').
+    :param length: Фактическая длина текста.
+    :param max_length: Максимально допустимая длина (По умолчанию 200).
+    """
+    def __init__(self, field_type: str, length: int, max_length: int=200):
+        self.field_type = field_type
+        self.length = length
+        self.max_length = max_length
+        super().__init__(
+            f"{field_type.capitalize()} превышает {max_length}, сейчас символов: {length}."
+        )
+
+
+class InvalidStatusError(ReviewError):
+    """
+    Исключение для недопустимого статуса отзыва.
+
+    :param status: Некорректное значение статуса.
+    :param allowed: Список корректных значений статуса.
+    """
+    def __init__(self, status: str, allowed: list[str]):
+        self.status = status
+        self.allowed = allowed
+        super().__init__(
+            f"Недопустимый статус: '{status}'. Допустимые значения: {allowed}."
+        )
+
+
+class MissingRequiredFieldsError(ReviewError):
+    """
+    Исключение для отсутствия обязательного поля в словаре при создании отзыва.
+
+    :param field_name: Имя пропущенного обязательного ключа.
+    """
+
+    def __init__(self, field_name: str):
+        self.field_name = field_name
+        super().__init__(
+            f"Отсутствует обязательное поле: '{field_name}'."
+        )
 
 
 class Review:
     """Модель Review для работы с отзывами."""
 
-    def __init__(self, title: str, content: str, author='Эксперт', date=None,
-                 status: str = "published", pros=None, cons=None):
+    def __init__(self, title: str, content: str, author: str='Эксперт',
+                 date: Optional[datetime] = None,
+                 status: ReviewStatus | str = ReviewStatus.PUBLISHED,
+                 pros: Optional[list[str]] = None, cons: Optional[list[str]] = None):
         """
         Инициализирует объект отзыва.
 
-        Примечания:
-            - Все присвоения проходят через свойства (setters), которые
-              выполняют проверку типов и, при необходимости, подстановку значений
-              по умолчанию.
-            - При передаче некорректных типов свойства выводят сообщение об ошибке
-              (в текущей реализации). В будущем планируется замена на исключения.
         :param title:   Заголовок отзыва. Не может быть пустой строкой.
         :param content: Содержание (текст) отзыва.
         :param author:  Имя автора. По умолчанию 'Эксперт'.
-        :param status:  Статус обзора. По умолчанию: "Опубликован".
+        :param status:  Статус обзора. По умолчанию: "PUBLISHED".
         :param date: Дата и время создания. Если не указана,
                 будет установлена текущая дата и время (через сеттер date).
         :param pros: Список преимуществ.
@@ -31,9 +112,9 @@ class Review:
         self.content = content
         self.author = author
         self.status = status
-        self.date = date                # if date is not None else datetime.today()
-        self.pros = pros                # pros.copy() if pros is not None else []
-        self.cons = cons                # (cons or []).copy()
+        self.date = date
+        self.pros = pros
+        self.cons = cons
 
     @property
     def title(self) -> str:
@@ -43,14 +124,20 @@ class Review:
     @title.setter
     def title(self, value: str) -> None:
         """
-        Присваивает заголовку новое значение.
+        Устанавливает заголовок.
+
         :param value: Новый текст заголовка.
+        :raises TypeError: Если value не является строкой.
+        :raises EmptyReviewFieldError: Если value пустая строка или состоит только из пробелов.
         :return: None.
         """
-        if isinstance(value, str):
+        if not isinstance(value, str):
+            raise TypeError(f"Заголовок должен быть строкой, получен "
+                            f"{type(value).__name__}.")
+        if value.strip():
             self.__title = value
         else:
-            print('Заголовок может быть только строкой')
+            raise EmptyReviewFieldError("title")
 
     @property
     def content(self) -> str:
@@ -60,14 +147,21 @@ class Review:
     @content.setter
     def content(self, value: str) -> None:
         """
-        Присваивает содержанию статьи новое значение.
+        Устанавливает содержание статьи.
+
         :param value: Новый текст содержания.
+        :raises TypeError: Если value не является строкой.
+        :raises EmptyReviewFieldError: Если value пустая строка или состоит только из пробелов.
         :return: None.
         """
-        if isinstance(value, str):
+        if not isinstance(value, str):
+            raise TypeError(f"Содержание должно быть строкой, получен "
+                            f"{type(value).__name__}.")
+        if value.strip():
             self.__content = value
         else:
-            print('Описание может быть только строкой')
+            raise EmptyReviewFieldError("content")
+
 
     @property
     def author(self) -> str:
@@ -77,43 +171,63 @@ class Review:
     @author.setter
     def author(self, value: str) -> None:
         """
-        Присваивает автору статьи новое значение.
+        Устанавливает автора статьи.
+
         :param value: Новое имя автора.
-        :return:
+        :raises TypeError: Если value не является строкой.
+        :raises EmptyReviewFieldError: Если value пустая строка или состоит только из пробелов.
+        :return: None.
         """
-        if isinstance(value, str):
+        if not isinstance(value, str):
+            raise TypeError(f"Автор должен быть строкой, получен "
+                            f"{type(value).__name__}.")
+        if value.strip():
             self.__author = value
         else:
-            print('Автор может быть только строкой')
+            raise EmptyReviewFieldError("author")
+
 
     @property
-    def status(self) -> str:
+    def status(self) -> ReviewStatus:
         """Возвращает статус обзора."""
         return self.__status
 
     @status.setter
-    def status(self, value: str) -> None:
+    def status(self, value: ReviewStatus | str) -> None:
         """
         Устанавливает статус обзора.
-        :param value: Состояние обзора.
+
+        :param value: Статус как объект ReviewStatus или строка.
+        :raises TypeError: Если value не является ReviewStatus или строкой.
+        :raises InvalidStatusError: Если строка не соответствует ни одному из допустимых значений.
         :return: None.
         """
-        if not isinstance(value, str):
-            print(f'{value} must be str')
-        else:
+        if isinstance(value, ReviewStatus):
             self.__status = value
+        elif isinstance(value, str):
+            try:
+                self.__status = ReviewStatus(value)
+            except ValueError as exc:
+                allowed = [s.value for s in ReviewStatus]
+                raise InvalidStatusError(value, allowed) from exc
+        else:
+            raise TypeError(
+                f"Статус должен быть строкой или ReviewStatus, получен {type(value).__name__}."
+            )
 
     @property
     def date(self) -> datetime:
-        """Возвращает дату создания обзора."""
+        """Возвращает дату и время создания обзора."""
         return self.__date
 
     @date.setter
-    def date(self, new_date: datetime) -> None:
+    def date(self, new_date: datetime | None) -> None:
         """
-        Изменяет дату создание статьи на new_date.
-        Если значение new_date - None, то дата автоматически сменится на актуальную.
-        :param new_date: Новая дата, когда была создана статья.
+        Устанавливает дату создания обзора.
+
+        :param new_date: Дата написания обзора.
+                        Если значение new_date - None, то дата автоматически сменится на актуальную.
+        :raises TypeError: Если new_date не является datetime или None.
         :return: None.
         """
         if new_date is None:
@@ -121,122 +235,346 @@ class Review:
         elif isinstance(new_date, datetime):
             self.__date = new_date
         else:
-            print('Ожидается экземпляр класса datetime')
+            raise TypeError(
+                f"Ожидается datetime или None, получен {type(new_date).__name__}."
+            )
 
     @property
     def pros(self) -> list[str]:
-        """Возвращает список плюсов обзора."""
+        """Возвращает копию списка плюсов из обзора."""
         return self.__pros.copy()
 
     @pros.setter
-    def pros(self, new_pros: list[str]) -> None:
+    def pros(self, new_pros: list[str] | None) -> None:
         """
-        Переопределяет список плюсов.
-        Если значение new_pros - None, то список минусов - [].
+        Устанавливает список плюсов.
+
         :param new_pros: Новый список плюсов.
+                        Если значение new_pros - None, то список минусов - [].
+        :raises TypeError: Если new_pros не является list или None.
+        :raises TypeError: Если хотя бы один элемент new_pros не str.
         :return: None.
         """
         if new_pros is None:
             self.__pros = []
-        elif isinstance(new_pros, list):
-            self.__pros = new_pros.copy()
+        elif not isinstance(new_pros, list):
+            raise TypeError(f"Ожидается list или None, получен {type(new_pros).__name__}.")
+        elif not all(isinstance(nc, str) for nc in new_pros):
+            raise TypeError("Ожидается что все элементы new_pros должны быть str.")
         else:
-            print('Ожидается экземпляр класса list')
+            self.__pros = new_pros.copy()
 
     @property
     def cons(self) -> list[str]:
-        """Возвращает список минусов обзора."""
+        """Возвращает копию списка минусов из обзора."""
         return self.__cons.copy()
 
     @cons.setter
-    def cons(self, new_cons: list[str]) -> None:
+    def cons(self, new_cons: list[str] | None) -> None:
         """
-        Переопределяет список минусов.
-        Если значение new_cons - None, то список минусов - [].
+        Устанавливает список минусов.
+
         :param new_cons: Новый список минусов.
+                        Если значение new_cons - None, то список минусов - [].
+        :raises TypeError: Если new_pros не является list или None.
         :return: None.
         """
         if new_cons is None:
             self.__cons = []
-        elif isinstance(new_cons, list):
-            self.__cons = new_cons.copy()
+        elif not isinstance(new_cons, list):
+            raise TypeError(f"Ожидается list или None, получен {type(new_cons).__name__}.")
+        elif not all(isinstance(nc, str) for nc in new_cons):
+            raise TypeError("Ожидается что все элементы new_cons должны быть str.")
         else:
-            print('Ожидается экземпляр класса list')
+            self.__cons = new_cons.copy()
+
 
     def add_pro(self, pro_text: str) -> None:
         """
         Добавляет новый плюс, в исходный список плюсов.
         :param pro_text: Новый плюс. Не может превышать 200 символов.
+        :raises TypeError: Если pro_text не строка.
+        :raises EmptyReviewFieldError: Если передан пустой текст.
+        :raises ReviewTextTooLongError: Если длина текста превышает 200 символов.
         :return: None.
         """
-        if not isinstance(pro_text, str):
-            print('Плюс должен быть описан с помощью текста')
-        elif not pro_text.strip():
-            print('Вы пытаетесь передать пустую строку!')
-        elif len(pro_text) > 200:
-            print('Текст плюса слишком большой')
-        else:
-            self.__pros.append(pro_text)
+        self._validate_text(pro_text, 'pro')
+        self.__pros.append(pro_text)
 
     def add_con(self, con_text: str) -> None:
         """
         Добавляет новый минус, в исходный список минусов.
         :param con_text: Новый минус. Не может превышать 200 символов.
+        :raises TypeError: Если con_text не строка.
+        :raises EmptyReviewFieldError: Если передан пустой текст.
+        :raises ReviewTextTooLongError: Если длина текста превышает 200 символов.
         :return: None.
         """
-        if not isinstance(con_text, str):
-            print('Минус должен быть описан с помощью текста')
-        elif not con_text.strip():
-            print('Вы пытаетесь передать пустую строку!')
-        elif len(con_text) > 200:
-            print('Текст минуса слишком большой')
-        else:
-            self.__cons.append(con_text)
+        self._validate_text(con_text, 'con')
+        self.__cons.append(con_text)
 
     def remove_pro(self, index: int) -> None:
         """
         Удаляет плюс из общего списка плюсов по индексу.
         С проверкой диапазона.
         :param index: Индекс элементы, который нужно удалить.
+        :raises IndexError: Если индекс выходит за пределы списка.
         :return: None.
         """
-        if len(self.__pros) > index >= -len(self.__pros):
-            self.__pros.pop(index)
-        else:
-            print('Индекс находится за пределами массива')
+        try:
+            del self.__pros[index]
+        except IndexError as exc:
+            raise IndexError(
+                f'Индекс {index}  выходит за пределы списка преимуществ '
+                f'(размер {len(self.__pros)}).') from exc
 
     def remove_con(self, index: int) -> None:
         """
         Удаляет минус из общего списка минусов по индексу.
         С проверкой диапазона.
         :param index: Индекс элементы, который нужно удалить.
+        :raises IndexError: Если индекс выходит за пределы списка.
         :return: None.
         """
-        if len(self.__cons) > index >= -len(self.__cons):
-            self.__cons.pop(index)
-        else:
-            print('Индекс находится за пределами массива')
+        try:
+            del self.__cons[index]
+        except IndexError as exc:
+            raise IndexError(
+                f"Индекс {index}  выходит за пределы списка недостатков "
+                f"(размер {len(self.__cons)}).") from exc
+
+    @staticmethod
+    def _validate_text(text: str, field_type: str, max_length: int = 200) -> None:
+        """
+        Проверяет текст на тип, пустоту и максимальную длину.
+
+        :param text: Проверяемая строка.
+        :param field_type: Тип поля ('pro' или 'con') для сообщения об ошибках.
+        :param max_length: Максимальная длина поля, по умолчанию 200 символов.
+        :raises TypeError: Если text не строка.
+        :raises EmptyReviewFieldError: Если передан пустой текст.
+        :raises ReviewTextTooLongError: Если длина текста превышает max_length символов.
+        :return: None.
+        """
+        if not isinstance(text, str):
+            raise TypeError(f"{field_type.capitalize()} должен быть строкой,"
+                            f" получен {type(text).__name__}.")
+        if not text.strip():
+            raise EmptyReviewFieldError(field_type)
+        if len(text) > max_length:
+            raise ReviewTextTooLongError(field_type, len(text))
 
     @classmethod
-    def from_dict(cls, data: dict) -> Review | None:
+    def from_dict(cls, data: ReviewData) -> Review:
         """
-        Преобразует словарь данных в экземпляр класса Device.
+        Преобразует словарь данных в экземпляр класса Review.
         :param data: Словарь с обязательными ключами: title, content
                     и опциональными: author, date, pros, cons.
+        :raises
         :return: экземпляр класса Review.
         """
-        base_keys = ['title', 'content']
+        base_keys = ('title', 'content')
 
         for key in base_keys:
             if key not in data:
-                print(f'ПРОПУЩЕН БАЗОВЫЙ КЛЮЧ: {key}! 🚨')  # TODO: ЗАМЕНИТЬ НА ИСКЛЮЧЕНИЕ
-                return None
+                raise MissingRequiredFieldsError(key)
 
         return cls(
             title=data['title'],
             content=data['content'],
             author=data.get('author', 'Эксперт'),
+            status=data.get('status', ReviewStatus.PUBLISHED),
             date=data.get('date', None),
             pros=data.get('pros', None),
             cons=data.get('cons', None),
         )
+
+    def __str__(self) -> str:
+        """Возвращает строковое представление объекта."""
+        return (f"Info Device:\n\ttitle={self.title}\n\tcontent={self.content}"
+                f"\n\tauthor={self.author}"
+                f"\n\tdate={self.date}\n\tstatus={self.status}"
+                f"\n\tpros={', '.join(self.pros)}\n\tcons={', '.join(self.cons)}")
+
+    def __repr__(self) -> str:
+        """Возвращает строковое представление объекта, по которому его можно воссоздать."""
+        return (f'Review(title={self.title!r}, content={self.content!r}, '
+                f'author={self.author!r}, date={self.date!r}, '
+                f'status=ReviewStatus.{self.status.name}, '
+                f'pros={self.pros}, cons={self.cons})')
+
+
+
+
+def main():
+    print("=" * 60)
+    print("Демонстрация работы класса Review")
+    print("=" * 60)
+
+    # ------------------------------------------------------------
+    # 1. Создание объектов через конструктор
+    # ------------------------------------------------------------
+    print("\n1. Создание объектов через конструктор:")
+    review1 = Review(
+        title="Отличный продукт!",
+        content="Мне очень понравилось. Рекомендую.",
+        author="Иван Иванов",
+        status=ReviewStatus.PUBLISHED,
+        date=datetime(2025, 3, 20, 12, 0),
+        pros=["Качественная сборка", "Быстрая доставка"],
+        cons=["Высокая цена"]
+    )
+    print("Объект review1 создан успешно.")
+    print(review1)
+
+    # Создание с параметрами по умолчанию
+    review2 = Review(
+        title="Неплохо, но есть нюансы",
+        content="В целом хорошо, но есть недостатки."
+    )
+    print("\nОбъект review2 (с параметрами по умолчанию):")
+    print(review2)
+
+    # ------------------------------------------------------------
+    # 2. Использование фабричного метода from_dict
+    # ------------------------------------------------------------
+    print("\n2. Использование from_dict:")
+    data = {
+        "title": "Из словаря",
+        "content": "Создан через from_dict",
+        "author": "Скрипт",
+        "pros": ["Плюс 1", "Плюс 2"],
+        "date": datetime.now()
+    }
+    review3 = Review.from_dict(data)
+    print("Объект review3 создан из словаря:")
+    print(review3)
+
+    # Попытка создать без обязательных полей
+    try:
+        invalid_data = {"title": "Без content"}
+        Review.from_dict(invalid_data)
+    except MissingRequiredFieldsError as e:
+        print(f"\nОжидаемая ошибка при создании из словаря: {e}")
+
+    # ------------------------------------------------------------
+    # 3. Работа с геттерами и сеттерами (проверка валидации)
+    # ------------------------------------------------------------
+    print("\n3. Изменение свойств и проверка валидации:")
+    # Изменение заголовка
+    review1.title = "Новый заголовок"
+    print(f"Новый заголовок: {review1.title}")
+
+    # Попытка установить пустой заголовок
+    try:
+        review1.title = "   "
+    except EmptyReviewFieldError as e:
+        print(f"Ошибка при установке пустого заголовка: {e}")
+
+    # Попытка установить заголовок не строкой
+    try:
+        review1.title = 123
+    except TypeError as e:
+        print(f"Ошибка при установке заголовка-числа: {e}")
+
+    # Изменение статуса
+    review1.status = "archived"
+    print(f"Новый статус: {review1.status}")
+
+    try:
+        review1.status = "unknown"
+    except InvalidStatusError as e:
+        print(f"Ошибка при установке недопустимого статуса: {e}")
+
+    # ------------------------------------------------------------
+    # 4. Работа со списками pros/cons
+    # ------------------------------------------------------------
+    print("\n4. Добавление и удаление плюсов/минусов:")
+    review2.add_pro("Отличная поддержка")
+    review2.add_pro("Гарантия 2 года")
+    print(f"Плюсы review2: {review2.pros}")
+
+    review2.add_con("Тяжеловат")
+    print(f"Минусы review2: {review2.cons}")
+
+    # Проверка валидации при добавлении
+    try:
+        review2.add_pro("")  # пустая строка
+    except EmptyReviewFieldError as e:
+        print(f"Ошибка при добавлении пустого плюса: {e}")
+
+    try:
+        review2.add_con("x" * 201)  # слишком длинный текст
+    except ReviewTextTooLongError as e:
+        print(f"Ошибка при добавлении слишком длинного минуса: {e}")
+
+    try:
+        review2.add_pro(123)  # не строка
+    except TypeError as e:
+        print(f"Ошибка при добавлении не строки: {e}")
+
+    # Удаление
+    print(f"\nПлюсы до удаления: {review2.pros}")
+    review2.remove_pro(0)  # удаляем первый плюс
+    print(f"Плюсы после удаления первого: {review2.pros}")
+
+    try:
+        review2.remove_pro(100)  # неверный индекс
+    except IndexError as e:
+        print(f"Ошибка при удалении по неверному индексу: {e}")
+
+    # ------------------------------------------------------------
+    # 5. Проверка сеттеров pros и cons (установка списков целиком)
+    # ------------------------------------------------------------
+    print("\n5. Установка списков pros/cons целиком:")
+    review1.pros = ["Новый плюс 1", "Новый плюс 2"]
+    print(f"pros после установки: {review1.pros}")
+    # Проверка, что список скопирован (изменение внешнего списка не влияет)
+    new_list = ["Изменённый"]
+    review1.pros = new_list
+    new_list.append("Добавленный извне")
+    print(f"pros внутри объекта: {review1.pros}")
+    print(f"Внешний список после изменения: {new_list}")
+
+    # Попытка установить список с элементами не строками
+    try:
+        review1.pros = ["Хорошо", 123, "Плохо"]
+    except TypeError as e:
+        print(f"Ошибка при установке списка с числом: {e}")
+
+    # Попытка установить не список
+    try:
+        review1.pros = "это строка"
+    except TypeError as e:
+        print(f"Ошибка при установке не списка: {e}")
+
+    # ------------------------------------------------------------
+    # 6. Работа с датой
+    # ------------------------------------------------------------
+    print("\n6. Работа с датой:")
+    original_date = review1.date
+    print(f"Исходная дата: {original_date}")
+    new_date = datetime(2024, 1, 1)
+    review1.date = new_date
+    print(f"Дата после изменения: {review1.date}")
+    review1.date = None  # установка текущей даты
+    print(f"Дата после установки None: {review1.date}")
+
+    try:
+        review1.date = "2024-01-01"  # не datetime
+    except TypeError as e:
+        print(f"Ошибка при установке строки в date: {e}")
+
+    # ------------------------------------------------------------
+    # 7. Вывод строковых представлений
+    # ------------------------------------------------------------
+    print("\n7. Строковые представления:")
+    print("str(review1):")
+    print(review1)
+    print("\nrepr(review1):")
+    print(repr(review1))
+
+    print("\nДемонстрация завершена.")
+
+if __name__ == "__main__":
+    main()
