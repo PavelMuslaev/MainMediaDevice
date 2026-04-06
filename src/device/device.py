@@ -1,21 +1,18 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Literal, Any, Optional
-
+from typing import Any, Optional
 import copy
 
 from src.review.review import Review
+from .allowed_categories import AllowedCategory
+from .device_error import *
+from ..review.review_error import InvalidStatusError
 
 
 class Device(ABC):
     """Супер класс модель любого устройства приложения."""
 
-    CategoryType = Literal["Смартфон", "Наушники", "Планшет", "Умные часы", "Ноутбук"]
-    ALLOWED_CATEGORIES = [
-        "Смартфон", "Наушники", "Планшет", "Умные часы", "Ноутбук"
-    ]
-
-    def __init__(self, brand: str, model: str, category: CategoryType,
+    def __init__(self, brand: str, model: str, category: AllowedCategory,
                  year: Optional[int]=None, image: Optional[str]=None,
                  specs: Optional[dict]=None, review: Optional[Review]=None):
         """
@@ -45,21 +42,22 @@ class Device(ABC):
         self.review = review
 
     @property
-    def category(self) -> CategoryType:
+    def category(self) -> AllowedCategory:
         """Возвращает категорию устройства."""
         return self._category
 
     @category.setter
-    def category(self, value: CategoryType) -> None:
+    def category(self, value: AllowedCategory | str) -> None:
         """
         Устанавливает категорию устройства.
         :param value: Категория устройства.
         :return: None.
         """
-        if value.title() in self.ALLOWED_CATEGORIES:
-            self._category = value.title()
-        else:
-            print(f'"value" must be in {self.ALLOWED_CATEGORIES}')
+        try:
+            self._category = AllowedCategory(value)
+        except ValueError as exc:
+            allowed_categories: list[str] = [i.value for i in AllowedCategory]
+            raise InvalidStatusError(value, allowed_categories) from exc
 
     @property
     def year(self) -> int:
@@ -74,12 +72,10 @@ class Device(ABC):
                          Если None, то будет установлен текущий год.
         :return: None.
         """
-        if new_year is None:
-            self._year = datetime.now().year
-        elif not isinstance(new_year, int):
-            print('"new_year" must be int or None')
-        elif new_year < 1900 or new_year > datetime.now().year:
-            print(f'"new_year" must be between 1900 and {datetime.now().year}')
+        if not isinstance(new_year, int):
+            raise TypeError('"new_year" must be int')
+        elif new_year < 1990 or new_year > datetime.now().year:
+            raise InvalidDeviceYearError(new_year, 1990, datetime.now().year)
         else:
             self._year = new_year
 
