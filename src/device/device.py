@@ -1,12 +1,11 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Optional, Self
 import copy
 
-from src.review.review import Review
+from ..review.review import Review
 from .allowed_categories import AllowedCategory
-from .device_error import *
-from ..review.review_error import InvalidStatusError
+from .device_error import InvalidAllowedCategoryError, InvalidDeviceYearError
 
 
 class Device(ABC):
@@ -21,8 +20,6 @@ class Device(ABC):
         :param model:       Модель устройства.
         :param category:    Категория устройства.
         :param year:        Год выпуска устройства.
-                            Если year is None, будет автоматически установлен
-                            текущий год.
         :param image:       Картинка устройства.
                             Если image is None, будет автоматически установлена
                             картинка по умолчанию.
@@ -51,13 +48,15 @@ class Device(ABC):
         """
         Устанавливает категорию устройства.
         :param value: Категория устройства.
+        :raises InvalidAllowedCategoryError: Если категория устройства установлена
+                    не из перечисления AllowedCategory.
         :return: None.
         """
         try:
             self._category = AllowedCategory(value)
         except ValueError as exc:
             allowed_categories: list[str] = [i.value for i in AllowedCategory]
-            raise InvalidStatusError(value, allowed_categories) from exc
+            raise InvalidAllowedCategoryError(value, allowed_categories) from exc
 
     @property
     def year(self) -> int:
@@ -65,19 +64,21 @@ class Device(ABC):
         return self._year
 
     @year.setter
-    def year(self, new_year: int | None) -> None:
+    def year(self, new_year: int) -> None:
         """
-        Устанавливает год выпуска устройства между текущим и 1900 годом.
+        Устанавливает год выпуска устройства между текущим и 1990 годом.
         :param new_year: Год выпуска устройства.
-                         Если None, то будет установлен текущий год.
+        :raises TypeError: Если год был передан не в виде числа.
+        :raises InvalidDeviceYearError: Если был нарушен диапазон возможных дат.
         :return: None.
         """
-        if not isinstance(new_year, int):
-            raise TypeError('"new_year" must be int')
-        elif new_year < 1990 or new_year > datetime.now().year:
-            raise InvalidDeviceYearError(new_year, 1990, datetime.now().year)
+        if isinstance(new_year, int):
+            if 1990 < new_year < datetime.now().year:
+                self._year = new_year
+            else:
+                raise InvalidDeviceYearError(new_year, 1990, datetime.now().year)
         else:
-            self._year = new_year
+            raise TypeError('Год должен быть установлен в виде целого числа.')
 
     @property
     def image(self) -> str | None:
@@ -90,12 +91,13 @@ class Device(ABC):
         Устанавливает новое изображение устройства.
         :param new_image: Новое изображение устройства.
                             Если None, то будет установлена картинка по умолчанию.
+        :raises TypeError: Если путь к картинке передан не в виде строки.
         :return: None.
         """
         if new_image is None:
             self._image = "/" # TODO: ПОКА ЗАГЛУШКА, В БУДУЩЕМ ИСПРАВИТЬ
         elif not isinstance(new_image, str):
-            print('"new_image" must be str')
+            raise TypeError('Путь к картинке должен быть указан в виде строки.')
         else:
             self._image = new_image
 
@@ -110,14 +112,15 @@ class Device(ABC):
         Устанавливает набор характеристик устройства.
         :param new_specs: Словарь характеристик устройства.
                           Если None, то будет создан пустой словарь.
+        :raises TypeError: Если new_specs получен не в виде словаря.
         :return: None.
         """
         if new_specs is None:
             self._specs = {}
-        elif not isinstance(new_specs, dict):
-            print('"new_specs" must be None or a dict')
-        else:
+        elif isinstance(new_specs, dict):
             self._specs = copy.deepcopy(new_specs)
+        else:
+            raise TypeError('new_specs должен быть dict или None.')
 
     @property
     def review(self) -> Review | None:
@@ -131,10 +134,10 @@ class Device(ABC):
         :param new_review:  Обзор на устройство.
         :return: None.
         """
-        if new_review is not None and not isinstance(new_review, Review):
-            print('"new_review" must be None or a Review')
-        else:
+        if isinstance(new_review, (Review, type(None))):
             self._review = new_review
+        else:
+            raise TypeError('"new_review" должен быть None или Review')
 
     def add_spec(self, key: str, value: Any) -> None:
         """
@@ -150,12 +153,13 @@ class Device(ABC):
         """
         Удаляет характеристику по ключу key.
         :param key: Ключ по которому будет произведен поиск.
+        :raises KeyError: Если ключ не найден.
         :return: None.
         """
-        if key in self._specs:
+        try:
             del self._specs[key]
-        else:
-            print(f'{key=} not found.')
+        except KeyError as exc:
+            raise KeyError(f"{key} не найден.") from exc
 
     @abstractmethod
     def get_device_type(self) -> str:
@@ -174,34 +178,5 @@ class Device(ABC):
 
     def __repr__(self) -> str:
         """Возвращает строковый отчёт об объекте."""
-        return (f'Device(brand={self.brand!r}, model={self.model!r}, category={self.category!r}, '
+        return (f'{self.__class__.__name__}(brand={self.brand!r}, model={self.model!r}, category={self.category!r}, '
                 f'year={self.year}, image={self.image!r}, specs={self.specs}, review={self.review})')
-
-    @classmethod
-    def from_dict(cls, data: dict) -> Device | None:
-        """
-        Преобразует словарь данных в экземпляр класса Device.
-        :param data: Словарь с обязательными ключами: brand, model, category,
-                    и опциональными: year, image, specs, review.
-        :return: экземпляр класса Device.
-        """
-        base_keys = ['brand', 'model', 'category']
-
-        for key in base_keys:
-            if key not in data:
-                print(f'ПРОПУЩЕН БАЗОВЫЙ КЛЮЧ: {key}! 🚨')  # TODO: ЗАМЕНИТЬ НА ИСКЛЮЧЕНИЕ
-                return None
-
-        review = None
-        if 'review' in data:
-            review = Review.from_dict(data['review'])
-
-        return cls(
-            brand=data['brand'],
-            model=data['model'],
-            category=data['category'],
-            year=data.get('year', None),
-            image=data.get('image', None),
-            specs=data.get('specs', None),
-            review=review,
-        )

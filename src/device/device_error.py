@@ -12,7 +12,7 @@ class InvalidAllowedCategoryError(DeviceError):
 
 
 class InvalidDeviceYearError(DeviceError):
-    def __init__(self, year: int, cor_start_year: int, cor_end_year: int):
+    def __init__(self, year: int, cor_start_year: int, cor_end_year: int) -> None:
         self._year = year
         self._cor_start_year = cor_start_year
         self._cor_end_year = cor_end_year
@@ -21,3 +21,9 @@ class InvalidDeviceYearError(DeviceError):
             f"Некорректное значение кода: {self._year}. Допустимый диапазон: "
             f"{self._cor_start_year}-{self._cor_end_year}."
         )
+
+
+class MissBaseKeyErrorDevice(DeviceError):
+    def __init__(self, base_key: str):
+        self._base_key = base_key
+        super().__init__(f"Пропущен базовый ключ: {self._base_key}.")
