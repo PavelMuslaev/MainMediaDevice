@@ -171,6 +171,27 @@ class Device(ABC):
         """Возвращает краткое описание устройства."""
         pass
 
+    def add_spec(self, key: str, value: str | int | float) -> None:
+        """
+            Добавляет и обновляет характеристики в словаре spec.
+            Если ключ уже существует, то значение перезаписывается
+            :param key: Имя ключа.
+            :param value: Значение ключа.
+            :return: None.
+        """
+        self.specs[key] = value
+
+    def remove_spec(self, key: str) -> None:
+        """
+            Удаляет характеристику по ключу из spec
+            :param key: Имя ключа.
+            :return: None.
+        """
+        if key in self.specs:
+            del self.specs[key]
+        else:
+            print(f'Ключ {key} не найден!')
+
     def __str__(self) -> str:
         """Возвращает строковый формат объекта."""
         return (f'Info Device:\nModel: {self.model}\nCategory: '
