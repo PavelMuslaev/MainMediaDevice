@@ -3,6 +3,7 @@ from enum import StrEnum
 
 class AllowedCategory(StrEnum):
     """Зарегистрированные категории устройств."""
+
     SMARTPHONE = "smartphone"
     HEADPHONE = "headphone"
     TABLET = "tablet"

@@ -3,6 +3,7 @@ from ..common.exceptions import AppError
 
 class DeviceError(AppError):
     """Базовое исключение для всех ошибок, связанных с устройствами."""
+
     pass
 
 
@@ -14,6 +15,7 @@ class InvalidAllowedCategoryError(DeviceError):
     :param cur_category: Категория переданная пользователем.
     :param categories: Список зарегистрированных категорий.
     """
+
     def __init__(self, cur_category: str, categories: list[str]):
         self._category = cur_category
         self._categories = categories
@@ -34,6 +36,7 @@ class InvalidYearDeviceError(DeviceError):
     :param start_year: Допустимое начало диапазона.
     :param end_year: Допустимый конец диапазона.
     """
+
     def __init__(self, year: int, start_year: int, end_year: int) -> None:
         self._year = year
         self._start_year = start_year

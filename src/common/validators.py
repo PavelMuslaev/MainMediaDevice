@@ -15,7 +15,9 @@ def validate_non_empty_string(value: str, field_name: str, entity: str) -> str:
     return value
 
 
-def validate_string_length(text: str, field_name: str, max_length: int, entity: str) -> str:
+def validate_string_length(
+    text: str, field_name: str, max_length: int, entity: str
+) -> str:
     text = validate_non_empty_string(text, field_name, entity)
     if len(text) > max_length:
         raise TextTooLongError(text, field_name, max_length, entity)
@@ -31,7 +33,9 @@ def validate_list_string(value_list: list[str], entity: str) -> list[str]:
 
     for i, item in enumerate(value_list):
         if not isinstance(item, str):
-            raise TypeError(f"Элемент с индексом {i} не является строкой: {item!r} {entity}.")
+            raise TypeError(
+                f"Элемент с индексом {i} не является строкой: {item!r} {entity}."
+            )
         if not item.strip():
             raise ValueError(
                 f"Элемент с индексом {i} пустая строка или состоит из пробелов: {item!r} {entity}."

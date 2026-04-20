@@ -3,6 +3,7 @@ from enum import StrEnum
 
 class ReviewStatus(StrEnum):
     """Статусы хранения обзора."""
+
     DRAFT = "draft"
     PUBLISHED = "published"
     ARCHIVED = "archived"

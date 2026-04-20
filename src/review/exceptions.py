@@ -3,6 +3,7 @@ from ..common.exceptions import AppError
 
 class ReviewError(AppError):
     """Базовое исключение для всех ошибок, связанных с отзывами."""
+
     pass
 
 
@@ -14,6 +15,7 @@ class InvalidStatusError(ReviewError):
     :param status: Некорректное значение статуса.
     :param allowed: Список корректных значений статуса.
     """
+
     def __init__(self, status: str, allowed: list[str]):
         self._status = status
         self._allowed = allowed
