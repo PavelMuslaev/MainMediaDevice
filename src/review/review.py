@@ -4,30 +4,34 @@
 """
 
 from datetime import datetime
-from typing import Optional, TypedDict, Required, Union
+from typing import TypedDict, Required, Self
 
-from .review_status import ReviewStatus
-from .review_error import (EmptyReviewFieldError, InvalidStatusError,
-                           ReviewTextTooLongError, MissingRequiredFieldsError)
+from .status import ReviewStatus
+from .exceptions import EmptyReviewFieldError, InvalidStatusError, ReviewTextTooLongError
+from ..common.exceptions import MissingRequiredFieldError
 
 
 class ReviewData(TypedDict, total=False):
     title: Required[str]
     content: Required[str]
     author: str
-    date: Optional[datetime]
-    status: Union[ReviewStatus, str]
-    pros: Optional[list[str]]
-    cons: Optional[list[str]]
+    date: datetime | None
+    status: ReviewStatus | str
+    pros: list[str] | None
+    cons: list[str] | None
 
 
 class Review:
     """Модель Review для работы с отзывами."""
 
-    def __init__(self, title: str, content: str, author: str='Эксперт',
-                 date: Optional[datetime] = None,
+    def __init__(self,
+                 title: str,
+                 content: str,
+                 author: str='Эксперт',
+                 date: datetime | None = None,
                  status: ReviewStatus | str = ReviewStatus.PUBLISHED,
-                 pros: Optional[list[str]] = None, cons: Optional[list[str]] = None):
+                 pros: list[str] | None = None,
+                 cons: list[str] | None = None):
         """
         Инициализирует объект отзыва.
 
@@ -140,7 +144,7 @@ class Review:
         try:
             self.__status = ReviewStatus(value)
         except ValueError as exc:
-            review_status: list[str] = [i.value for i in ReviewStatus]
+            review_status = ReviewStatus.to_list()
             raise InvalidStatusError(value, review_status) from exc
 
     @property
@@ -293,19 +297,19 @@ class Review:
             raise ReviewTextTooLongError(field_type, len(text))
 
     @classmethod
-    def from_dict(cls, data: ReviewData) -> Review:
+    def from_dict(cls, data: ReviewData) -> Self:
         """
         Преобразует словарь данных в экземпляр класса Review.
         :param data: Словарь с обязательными ключами: title, content
                     и опциональными: author, date, pros, cons.
-        :raises MissingRequiredFieldsError: если пропущен обязательный аргумент.
+        :raises MissingRequiredFieldError: если пропущен обязательный аргумент.
         :return: экземпляр класса Review.
         """
         base_keys = ('title', 'content')
 
         for key in base_keys:
             if key not in data:
-                raise MissingRequiredFieldsError(key)
+                raise MissingRequiredFieldError(key)
 
         return cls(
             title=data['title'],

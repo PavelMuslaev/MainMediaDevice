@@ -1,19 +1,19 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Optional, Self
+from typing import Any
 import copy
 
 from ..review.review import Review
-from .allowed_categories import AllowedCategory
-from .device_error import InvalidAllowedCategoryError, InvalidDeviceYearError
+from .categories import AllowedCategory
+from .exceptions import InvalidAllowedCategoryError, InvalidDeviceYearError
 
 
 class Device(ABC):
     """Супер класс модель любого устройства приложения."""
 
     def __init__(self, brand: str, model: str, category: AllowedCategory,
-                 year: Optional[int]=None, image: Optional[str]=None,
-                 specs: Optional[dict]=None, review: Optional[Review]=None):
+                 year: int | None=None, image: str | None=None,
+                 specs: dict | None=None, review: Review | None=None):
         """
         Инициализирует экземпляр устройства.
         :param brand:       Брэнд устройства.
@@ -55,7 +55,7 @@ class Device(ABC):
         try:
             self._category = AllowedCategory(value)
         except ValueError as exc:
-            allowed_categories: list[str] = [i.value for i in AllowedCategory]
+            allowed_categories = AllowedCategory.to_list()
             raise InvalidAllowedCategoryError(value, allowed_categories) from exc
 
     @property
@@ -141,10 +141,10 @@ class Device(ABC):
 
     def add_spec(self, key: str, value: Any) -> None:
         """
-        Добавляет или обновляет характеристику в словаре _specs по
-        ключу key со значением value.
-        :param key:     Ключ словаря.
-        :param value:   Значение ключа.
+        Добавляет и обновляет характеристики в словаре spec.
+        Если ключ уже существует, то значение перезаписывается
+        :param key: Имя ключа.
+        :param value: Значение ключа.
         :return: None.
         """
         self._specs[key] = value
@@ -170,27 +170,6 @@ class Device(ABC):
     def get_short_description(self) -> str:
         """Возвращает краткое описание устройства."""
         pass
-
-    def add_spec(self, key: str, value: str | int | float) -> None:
-        """
-            Добавляет и обновляет характеристики в словаре spec.
-            Если ключ уже существует, то значение перезаписывается
-            :param key: Имя ключа.
-            :param value: Значение ключа.
-            :return: None.
-        """
-        self.specs[key] = value
-
-    def remove_spec(self, key: str) -> None:
-        """
-            Удаляет характеристику по ключу из spec
-            :param key: Имя ключа.
-            :return: None.
-        """
-        if key in self.specs:
-            del self.specs[key]
-        else:
-            print(f'Ключ {key} не найден!')
 
     def __str__(self) -> str:
         """Возвращает строковый формат объекта."""
