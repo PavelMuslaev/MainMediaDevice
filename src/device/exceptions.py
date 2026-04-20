@@ -8,6 +8,7 @@ class DeviceError(AppError):
 
 class InvalidAllowedCategoryError(DeviceError):
     """
+    TODO: ПОД ВОПРОСОМ ИХ НЕОБХОДИМОСТЬ
     Возникает если пользователь пытается установить не зарегистрированную категорию устройства.
 
     :param cur_category: Категория переданная пользователем.
@@ -17,12 +18,16 @@ class InvalidAllowedCategoryError(DeviceError):
         self._category = cur_category
         self._categories = categories
 
-        message = f"Недопустимая категория: {self._category}. Допустимые значения: {", ".join(self._categories)}."
+        message = (
+            f"Недопустимая категория: {self._category}. "
+            f"Допустимые значения: {', '.join(self._categories)}."
+        )
         super().__init__(message)
 
 
-class InvalidDeviceYearError(DeviceError):
+class InvalidYearDeviceError(DeviceError):
     """
+    TODO: ПОД ВОПРОСОМ ИХ НЕОБХОДИМОСТЬ
     Возникает при попытке установить некорректный год устройства.
 
     :param year: Год переданный пользователем.

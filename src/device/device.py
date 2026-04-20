@@ -1,19 +1,27 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, date
 from typing import Any
 import copy
 
 from ..review.review import Review
+from ..common.exceptions import InvalidChoiceError
+from ..common.validators import validate_non_empty_string, validate_range_year
 from .categories import AllowedCategory
-from .exceptions import InvalidAllowedCategoryError, InvalidDeviceYearError
 
 
 class Device(ABC):
     """Супер класс модель любого устройства приложения."""
 
-    def __init__(self, brand: str, model: str, category: AllowedCategory,
-                 year: int | None=None, image: str | None=None,
-                 specs: dict | None=None, review: Review | None=None):
+    def __init__(
+        self,
+        brand: str,
+        model: str,
+        category: AllowedCategory,
+        year: int | None = None,
+        image: str | None = None,
+        specs: dict | None = None,
+        review: Review | None = None,
+    ):
         """
         Инициализирует экземпляр устройства.
         :param brand:       Брэнд устройства.
@@ -56,7 +64,7 @@ class Device(ABC):
             self._category = AllowedCategory(value)
         except ValueError as exc:
             allowed_categories = AllowedCategory.to_list()
-            raise InvalidAllowedCategoryError(value, allowed_categories) from exc
+            raise InvalidChoiceError(value, allowed_categories, "Device") from exc
 
     @property
     def year(self) -> int:
@@ -64,7 +72,7 @@ class Device(ABC):
         return self._year
 
     @year.setter
-    def year(self, new_year: int) -> None:
+    def year(self, new_year: int | None) -> None:
         """
         Устанавливает год выпуска устройства между текущим и 1990 годом.
         :param new_year: Год выпуска устройства.
@@ -72,13 +80,10 @@ class Device(ABC):
         :raises InvalidDeviceYearError: Если был нарушен диапазон возможных дат.
         :return: None.
         """
-        if isinstance(new_year, int):
-            if 1990 < new_year < datetime.now().year:
-                self._year = new_year
-            else:
-                raise InvalidDeviceYearError(new_year, 1990, datetime.now().year)
+        if new_year is None:
+            self._year = None
         else:
-            raise TypeError('Год должен быть установлен в виде целого числа.')
+            self._year = validate_range_year(new_year, 1990, date.today().year)
 
     @property
     def image(self) -> str | None:
@@ -95,11 +100,9 @@ class Device(ABC):
         :return: None.
         """
         if new_image is None:
-            self._image = "/" # TODO: ПОКА ЗАГЛУШКА, В БУДУЩЕМ ИСПРАВИТЬ
-        elif not isinstance(new_image, str):
-            raise TypeError('Путь к картинке должен быть указан в виде строки.')
+            self._image = "/"  # TODO: ПОКА ЗАГЛУШКА, В БУДУЩЕМ ИСПРАВИТЬ
         else:
-            self._image = new_image
+            self._image = validate_non_empty_string(new_image, "image", "Device")
 
     @property
     def specs(self) -> dict:
@@ -120,7 +123,7 @@ class Device(ABC):
         elif isinstance(new_specs, dict):
             self._specs = copy.deepcopy(new_specs)
         else:
-            raise TypeError('new_specs должен быть dict или None.')
+            raise TypeError("new_specs должен быть dict или None.")
 
     @property
     def review(self) -> Review | None:
@@ -173,10 +176,14 @@ class Device(ABC):
 
     def __str__(self) -> str:
         """Возвращает строковый формат объекта."""
-        return (f'Info Device:\nModel: {self.model}\nCategory: '
-                f'{self.category}\nYear: {self.year}\nImage: {self.image}')
+        return (
+            f"Info Device:\nModel: {self.model}\nCategory: "
+            f"{self.category}\nYear: {self.year}\nImage: {self.image}"
+        )
 
     def __repr__(self) -> str:
         """Возвращает строковый отчёт об объекте."""
-        return (f'{self.__class__.__name__}(brand={self.brand!r}, model={self.model!r}, category={self.category!r}, '
-                f'year={self.year}, image={self.image!r}, specs={self.specs}, review={self.review})')
+        return (
+            f"{self.__class__.__name__}(brand={self.brand!r}, model={self.model!r}, category={self.category!r}, "
+            f"year={self.year}, image={self.image!r}, specs={self.specs}, review={self.review})"
+        )
