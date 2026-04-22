@@ -24,7 +24,7 @@ def validate_non_empty_string(value: str, field_name: str, entity: str) -> str:
 
     if not isinstance(value, str):
         raise TypeError(
-            f"Поле '{field_name} {entity}' должно быть str, получен {type(value).__name__}"
+            f"Поле '{field_name}.{entity}' должно быть str, получен {type(value).__name__}"
         )
 
     if not (normalized := value.strip()):
@@ -66,6 +66,7 @@ def validate_list_string(
     :param value_list: Проверяемый список.
     :param field_name: Имя поля.
     :param entity: Имя сущности (класса), к которому относится поле.
+    :param max_item_length: Максимальная длина элемента.
 
     :return: Копия исходного списка (для защиты от внешних изменений).
 
