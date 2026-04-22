@@ -1,8 +1,34 @@
+"""
+Допустимые категории устройств.
+
+Содержит перечисление всех категорий, которые могут быть присвоены устройству.
+Используется для валидации и обеспечения типобезопасности при работе с категориями.
+"""
+
 from enum import StrEnum
 
 
-class AllowedCategory(StrEnum):
-    """Зарегистрированные категории устройств."""
+class DeviceCategory(StrEnum):
+    """
+    Зарегистрированные категории устройств.
+
+    Возможные значения:
+
+    - `SMARTPHONE` - смартфон.
+    - `HEADPHONE` - наушники.
+    - `TABLET` - планшет.
+    - `SMARTWATCH` - умные часы.
+    - `LAPTOP` - ноутбук.
+
+    Пример использования::
+
+    category = DeviceCategory.SMARTPHONE
+    print(category.value)  # "smartphone"
+
+    # Проверка валидности строки
+    if raw_value in DeviceCategory.to_list():
+        category = DeviceCategory(raw_value)
+    """
 
     SMARTPHONE = "smartphone"
     HEADPHONE = "headphone"
@@ -10,7 +36,7 @@ class AllowedCategory(StrEnum):
     SMARTWATCH = "smartwatch"
     LAPTOP = "laptop"
 
-    @staticmethod
-    def to_list() -> list[str]:
+    @classmethod
+    def to_list(cls) -> list[str]:
         """Возвращает значения атрибутов перечисления в виде списка строк."""
-        return [str(i) for i in AllowedCategory]
+        return [str(i) for i in cls]
