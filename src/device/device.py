@@ -15,16 +15,11 @@ from ..review.review import Review
 from ..common.exceptions import InvalidChoiceError
 from ..common.validators import validate_non_empty_string, validate_range_year
 from .categories import DeviceCategory
+from ..core.config import settings
 
 
 class Device(ABC):
-    """
-    Абстрактный суперкласс для всех устройств.
-
-    :cvar _DEFAULT_START_YEAR: Нижняя граница допустимого года выпуска.
-    """
-
-    _DEFAULT_START_YEAR = 1990
+    """Абстрактный суперкласс для всех устройств."""
 
     def __init__(
         self,
@@ -119,7 +114,7 @@ class Device(ABC):
         else:
             self._year = validate_range_year(
                 new_year,
-                self._DEFAULT_START_YEAR,
+                settings.DEFAULT_START_YEAR_DEVICE,
                 datetime.today().year,
                 "year",
                 "Device",
@@ -139,7 +134,7 @@ class Device(ABC):
         :raises EmptyFieldError: Если переданная строка пуста.
         """
         if new_image is None:
-            self._image = "/"  # TODO: ПОКА ЗАГЛУШКА, В БУДУЩЕМ ИСПРАВИТЬ
+            self._image = settings.DEFAULT_IMAGE_DEVICE
         else:
             self._image = validate_non_empty_string(new_image, "image", "Device")
 

@@ -52,43 +52,9 @@ def validate_string_length(
     """
     normalized = validate_non_empty_string(text, field_name, entity)
     if len(normalized) > max_length:
-        raise TextTooLongError(text, field_name, max_length, entity)
+        raise TextTooLongError(normalized, field_name, max_length, entity)
 
     return normalized
-
-
-def validate_list_string(
-    value_list: list[str], field_name: str, entity: str, max_item_length: int
-) -> list[str]:
-    """
-    Проверяет, что переданный объект является списком строк, не содержащим пустых элементов.
-
-    :param value_list: Проверяемый список.
-    :param field_name: Имя поля.
-    :param entity: Имя сущности (класса), к которому относится поле.
-    :param max_item_length: Максимальная длина элемента.
-
-    :return: Копия исходного списка (для защиты от внешних изменений).
-
-    :raises TypeError: Если value_list не является списком или элемент не является строкой.
-    :raises EmptyFieldError: Если какой-либо элемент списка - пустая строка.
-    """
-    if not isinstance(value_list, list):
-        raise TypeError(
-            f"'{entity}.{field_name}' должен быть list, получен {type(value_list).__name__}"
-        )
-
-    normalized_list: list[str] = []
-    for i, item in enumerate(value_list):
-        if not isinstance(item, str):
-            raise TypeError(
-                f"Элемент с индексом {i} не является строкой: {item!r} {entity}.{field_name}."
-            )
-
-        normalized = validate_string_length(item, field_name, max_item_length, entity)
-        normalized_list.append(normalized)
-
-    return normalized_list
 
 
 def validate_range_year(
