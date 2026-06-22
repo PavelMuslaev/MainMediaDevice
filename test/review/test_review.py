@@ -115,6 +115,11 @@ class TestReview:
         with pytest.raises(res):
             minimal_review.status = status
 
+    @pytest.mark.parametrize("date", ["2026-01-01", 123])
+    def test_invalid_date(self, date, minimal_review):
+        with pytest.raises(TypeError):
+            minimal_review.date = date
+
     @pytest.mark.parametrize(
         "status",
         [
@@ -275,6 +280,13 @@ class TestReview:
         assert minimal_review.pros == ["Test Pro 1"]
 
     def test_add_con_normalization(self, minimal_review):
-        minimal_review.add_pro("    Test Pro 1    ")
-        assert minimal_review.pros == ["Test Pro 1"]
+        minimal_review.add_con("    Test Con 1    ")
+        assert minimal_review.cons == ["Test Con 1"]
+
+    def test_repr_contains_constructor_values(self, full_review):
+        result = repr(full_review)
+
+        assert "Review(title='Test Review'" in result
+        assert "author='Test Author'" in result
+        assert "status=ReviewStatus.DRAFT" in result
 

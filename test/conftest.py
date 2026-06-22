@@ -1,28 +1,26 @@
+from time import perf_counter
+
 import pytest
 
 
 @pytest.fixture(scope="session", autouse=True)
 def print_start_end_session():
-    print("\n#--- НАЧАЛО ТЕСТОВОЙ ССЕСИИ ---")
+    print("\n#--- TEST SESSION START ---")
     yield
-    print("\n#--- КОНЕЦ ТЕСТОВОЙ ССЕСИИ ---")
+    print("\n#--- TEST SESSION END ---")
 
 
 @pytest.fixture(scope="function", autouse=True)
-def track_test_duration_func():
-    import time
-
-    start_time = time.time()
+def track_test_duration_func(request):
+    start_time = perf_counter()
     yield
-    result = time.time() - start_time
-    print(f"\nТест выполнился: {result:.4f} сек.")
+    result = perf_counter() - start_time
+    print(f"\nTest duration [{request.node.nodeid}]: {result:.4f} sec.")
 
 
 @pytest.fixture(scope="session", autouse=True)
 def track_test_duration_session():
-    import time
-
-    start_time = time.time()
+    start_time = perf_counter()
     yield
-    result = time.time() - start_time
-    print(f"\nОбщее время выполнения: {result:.4f} сек.")
+    result = perf_counter() - start_time
+    print(f"\nTotal test duration: {result:.4f} sec.")
